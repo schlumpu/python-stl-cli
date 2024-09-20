@@ -41,6 +41,7 @@ def decimate(
 
 
 def clean(infilepath: str, verbose:bool=False):
+    # https://en.wikipedia.org/wiki/STL_(file_format)
     try: 
         if verbose:
             with open(infilepath, 'rb') as f:
