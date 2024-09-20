@@ -1,0 +1,4 @@
+*.log
+*.stl
+*.pyc
+venv/
