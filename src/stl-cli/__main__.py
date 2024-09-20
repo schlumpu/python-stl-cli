@@ -1,6 +1,7 @@
 
 import argparse
 from pathlib import Path
+import sys
 
 from process import process
 from logger import logger
@@ -38,9 +39,11 @@ for inputpath in pathlist:
         outputpath = Path.joinpath(Path(args.output), inputpath)
     else:
         outputpath = Path(str(inputpath).replace(args.input, args.output, 1))
-    if inputpath != outputpath and not args.overwrite:
-        pass
-        # TODO: confirm overwrite for each file
+    if inputpath == outputpath and not args.overwrite:
+        sys.stdout.write(f'confirm overwrite {outputpath} [y/N]')
+        choice = input().lower()
+        if choice != 'y':
+            continue
     Path(outputpath.parents[0]).mkdir(parents=True, exist_ok=True)
     process(
         inputpath, 
