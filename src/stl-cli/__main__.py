@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 import sys
 
-from process import process
+from process import decimate, clean
 from logger import logger
 
 parser = argparse.ArgumentParser(
@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('-i', '--input', default='.', help='input folder')
 parser.add_argument('-o', '--output', default=None, help='output folder')
-parser.add_argument('-d', '--decimate', type=float, default=0.5, 
+parser.add_argument('-d', '--decimate', type=float, default=0.0, 
                                                         help='decimate factor')
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
                                                         help='display logging')
@@ -45,9 +45,12 @@ for inputpath in pathlist:
         if choice != 'y':
             continue
     Path(outputpath.parents[0]).mkdir(parents=True, exist_ok=True)
-    process(
-        inputpath, 
-        outputpath, 
-        decimate_factor=args.decimate, 
-        verbose=args.verbose
-    )
+    if args.decimate:
+        decimate(
+            inputpath, 
+            outputpath, 
+            decimate_factor=args.decimate, 
+            verbose=args.verbose
+        )
+    if args.clean:
+        clean(outputpath, verbose=args.verbose)
