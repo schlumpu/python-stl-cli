@@ -2,3 +2,6 @@
 *.stl
 *.pyc
 venv/
+input/
+output/
+reduced/
