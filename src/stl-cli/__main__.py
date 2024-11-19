@@ -31,7 +31,7 @@ with alive_bar(len(pathlist), enrich_print=False, length=columns, spinner=None, 
         bar.text(f'{inputpath}')
 
         Path(outputpath.parents[0]).mkdir(parents=True, exist_ok=True)
-        if args.decimate:
+        if args.decimate is not None:
             decimate(
                 inputpath, 
                 outputpath, 
