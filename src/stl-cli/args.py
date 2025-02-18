@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('-i', '--input', default='.', help='input folder')
 parser.add_argument('-o', '--output', default=None, help='output folder')
-parser.add_argument('-d', '--decimate', type=float, default=0.5, 
+parser.add_argument('-d', '--decimate', type=float, default=0.0, 
                                                         help='decimate factor')
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
                                                         help='display logging')
@@ -16,6 +16,9 @@ parser.add_argument('-c', '--clean', action='store_true', default=False,
                                                         help='remove metadata')
 parser.add_argument('-y', '--overwrite', action='store_true', default=False,
                                             help='confirm inplace processing')
+parser.add_argument('-r', '--repair', action='store_true', default=False,
+                                            help='repair (remove supports)')
+
 args = parser.parse_args()
 
 args.input = args.input.rstrip('/')
