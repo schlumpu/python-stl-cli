@@ -1,5 +1,6 @@
 
 import vtk
+import pymeshfix
 import structlog
 
 from logger import logger
@@ -50,5 +51,23 @@ def clean(infilepath: str, verbose:bool=False):
         with open(infilepath, 'r+b') as f:
             # f.seek(0)
             f.write(bytearray([0]*80))
+    except Exception as e:
+        logger.exception('exception')
+
+def repair(infilepath: str, outfilepath: str, verbose:bool=False):
+    try:
+        # pymeshfix.clean_from_file(str(outputpath), str(outputpath))
+        tin = pymeshfix.PyTMesh()
+        tin.load_file(str(infilepath))
+        
+        v, f = tin.return_arrays()
+        meshfix = pymeshfix.MeshFix(v, f)
+        meshfix.repair()
+        meshfix.save(str(outfilepath))
+
+        # tin.join_closest_components()
+        # tin.fill_small_boundaries()
+        # tin.clean()
+        # tin.save_file(str(outputpath))
     except Exception as e:
         logger.exception('exception')

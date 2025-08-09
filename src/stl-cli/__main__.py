@@ -4,9 +4,8 @@ import sys
 import shutil
 
 from alive_progress import alive_bar
-import pymeshfix
 
-from process import decimate, clean
+from process import decimate, clean, repair
 from logger import logger
 from args import args
 
@@ -43,18 +42,6 @@ with alive_bar(len(pathlist), enrich_print=False, length=columns, spinner=None, 
             clean(outputpath, verbose=args.verbose)
 
         if args.repair:
-            # pymeshfix.clean_from_file(str(outputpath), str(outputpath))
-            tin = pymeshfix.PyTMesh()
-            tin.load_file(str(outputpath))
-            
-            v, f = tin.return_arrays()
-            meshfix = pymeshfix.MeshFix(v, f)
-            meshfix.repair()
-            meshfix.save(str(outputpath))
-
-            # tin.join_closest_components()
-            # tin.fill_small_boundaries()
-            # tin.clean()
-            # tin.save_file(str(outputpath))
+            repair(inputpath, outputpath, verbose=args.verbose)
         
         bar()   # update progress bar
