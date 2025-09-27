@@ -51,4 +51,5 @@ Will convert to text stl; python-stl-cli with a -d factor of 0 can be used to co
 ```
 
 # TODO:
+    [ ] add tests
     [ ] [https://pymeshfix.pyvista.org/](https://pymeshfix.pyvista.org/)
