@@ -1,11 +1,12 @@
 
+import os
 from pathlib import Path
 import sys
 import shutil
 
 from alive_progress import alive_bar
 
-from process import decimate, clean, repair
+from process import decimate, clean, repair, make_solid
 from logger import logger
 from args import args
 
@@ -31,6 +32,12 @@ with alive_bar(len(pathlist), enrich_print=False, length=columns, spinner=None, 
         bar.text(f'{inputpath}')
 
         Path(outputpath.parents[0]).mkdir(parents=True, exist_ok=True)
+        if args.max_file_size:
+            size_mb = os.path.getsize(inputpath) / (1024 * 1024)
+            if args.max_file_size < size_mb:
+                args.decimate = 1 - (args.max_file_size / size_mb)
+            else:
+                args.decimate = 0
         if args.decimate is not None:
             decimate(
                 inputpath, 
@@ -43,5 +50,13 @@ with alive_bar(len(pathlist), enrich_print=False, length=columns, spinner=None, 
 
         if args.repair:
             repair(inputpath, outputpath, verbose=args.verbose)
+
+        # if args.make_solid:
+        #     make_solid(
+        #         inputpath,
+        #         outputpath,
+        #         voxel_size=args.make_solid,
+        #         verbose=args.verbose
+        #     )
         
         bar()   # update progress bar
