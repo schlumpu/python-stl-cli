@@ -51,12 +51,12 @@ with alive_bar(len(pathlist), enrich_print=False, length=columns, spinner=None, 
         if args.repair:
             repair(inputpath, outputpath, verbose=args.verbose)
 
-        # if args.make_solid:
-        #     make_solid(
-        #         inputpath,
-        #         outputpath,
-        #         voxel_size=args.make_solid,
-        #         verbose=args.verbose
-        #     )
+        if args.make_solid:
+            make_solid(
+                inputpath,
+                outputpath,
+                voxel_size=args.make_solid,
+                verbose=args.verbose
+            )
         
         bar()   # update progress bar
