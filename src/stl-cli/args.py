@@ -20,7 +20,7 @@ parser.add_argument('-y', '--overwrite', action='store_true', default=False,
                     help='confirm inplace processing; if not set, will prompt for confirmation')
 parser.add_argument('-r', '--repair', action='store_true', default=False,
                     help='repair (remove supports, experimental)')
-parser.add_argument('-s', '--make-solid', type=float, default=0.0,
+parser.add_argument('-s', '--make-solid', action='store_true', default=False,
                     help='make solid (MeshMixer-style); value is voxel size, 0 disables stage')
 parser.add_argument('-m', '--max-file-size', type=float, default=0.0,
                     help='attempt to reduce file size to provided value (in MB); will overwrite decimate value')
@@ -36,6 +36,3 @@ if args.max_file_size<0:
 
 if args.decimate<0 or args.decimate>1:
     raise ValueError('args.decimate')
-
-if args.make_solid<0:
-    raise ValueError('args.make_solid')

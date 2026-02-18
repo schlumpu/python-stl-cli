@@ -6,7 +6,8 @@ import shutil
 
 from alive_progress import alive_bar
 
-from process import decimate, clean, repair, make_solid
+from process import decimate, clean, repair
+from solidify import make_solid
 from logger import logger
 from args import args
 
@@ -55,7 +56,6 @@ with alive_bar(len(pathlist), enrich_print=False, length=columns, spinner=None, 
             make_solid(
                 inputpath,
                 outputpath,
-                voxel_size=args.make_solid,
                 verbose=args.verbose
             )
         
