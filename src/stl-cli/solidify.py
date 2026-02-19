@@ -1,119 +1,49 @@
-import structlog
-import vtk
-import math
-import multiprocessing
-from logger import logger
 
-def attach_progress(alg, name):
-    last = {"val": -1}
-    def callback(caller, event):
-        p = int(caller.GetProgress() * 100)
-        if p != last["val"]:
-            last["val"] = p
-            print(f"{name}: {p}%   ", end="\r")
-    alg.AddObserver("ProgressEvent", callback)
+import structlog
+import open3d as o3d
+import numpy as np
+
+import os
+import multiprocessing
+import math
 
 def make_solid(
     infilename: str,
     outfilename: str,
-    smoothing_iterations: int = 20,
-    target_grid: int = 128,
-    voxel_size: float = None,
     verbose: bool = False,
 ):
+    
+    cpu_count = math.ceil(multiprocessing.cpu_count()/2)
+    os.environ['OMP_NUM_THREADS'] = str(cpu_count)
+    
+    number_of_sample_points = 2**19     # solid accuracy
+    density_depth = 16                  # solid accuracy
+    keep_quantile = 0.0
+
     structlog.contextvars.bind_contextvars(infilename=infilename, outfilename=outfilename)
 
-    try:
-        if verbose:
-            print(f"Reading STL: {infilename}")
+    # Read mesh
+    mesh = o3d.io.read_triangle_mesh(infilename)
+    mesh.compute_vertex_normals()
 
-        reader = vtk.vtkSTLReader()
-        reader.SetFileName(infilename)
-        reader.Update()
+    # Sample points
+    pcd = mesh.sample_points_uniformly(number_of_points=number_of_sample_points)
 
-        clean = vtk.vtkCleanPolyData()
-        clean.SetInputConnection(reader.GetOutputPort())
+    # Poisson reconstruction
+    mesh_solid, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+        pcd,
+        depth=density_depth
+    )
 
-        triangles = vtk.vtkTriangleFilter()
-        triangles.SetInputConnection(clean.GetOutputPort())
-        triangles.Update()
+    # Optional cleanup
+    densities = np.asarray(densities)
+    keep = densities > np.quantile(densities, keep_quantile)
+    mesh_solid = mesh_solid.select_by_index(np.where(keep)[0])
 
-        bounds = triangles.GetOutput().GetBounds()
-        xmin, xmax, ymin, ymax, zmin, zmax = bounds
-        dx, dy, dz = xmax-xmin, ymax-ymin, zmax-zmin
-        volume = dx*dy*dz
+    # FIX: compute normals for STL export
+    mesh_solid.compute_triangle_normals()
+    mesh_solid.compute_vertex_normals()
 
-        voxel_size = volume / 2**20
-        print(f"Auto voxel size: {voxel_size:.4f}")
+    # Write STL
+    o3d.io.write_triangle_mesh(outfilename, mesh_solid)
 
-        # # Automatic voxel size
-        # if voxel_size is None:
-        #     largest_dim = max(dx, dy, dz)
-        #     voxel_size = largest_dim / target_grid
-        #     print(f"Auto voxel size: {voxel_size:.4f}")
-
-        nx, ny, nz = int(dx/voxel_size), int(dy/voxel_size), int(dz/voxel_size)
-        if verbose:
-            print(f"Voxel grid: {nx} x {ny} x {nz}")
-
-        # Normals
-        normals = vtk.vtkPolyDataNormals()
-        normals.SetInputConnection(triangles.GetOutputPort())
-        normals.SetConsistency(True)
-        normals.SetAutoOrientNormals(True)
-        normals.SetSplitting(False)
-
-        # Signed Distance
-        distance = vtk.vtkSignedDistance()
-        distance.SetInputConnection(normals.GetOutputPort())
-        distance.SetRadius(voxel_size * 2)
-        distance.SetBounds(bounds)
-        distance.SetDimensions(nx, ny, nz)
-        attach_progress(distance, "Signed Distance")
-        distance.Update()
-        print("SDF complete.")
-
-        # Gaussian smooth
-        gauss = vtk.vtkImageGaussianSmooth()
-        gauss.SetInputConnection(distance.GetOutputPort())
-        gauss.SetStandardDeviation(voxel_size)
-        gauss.SetRadiusFactors(1.0,1.0,1.0)
-        try:
-            gauss.SetNumberOfThreads(multiprocessing.cpu_count())
-        except AttributeError:
-            pass
-        attach_progress(gauss, "Gaussian Smooth")
-        gauss.Update()
-        print("Gaussian smoothing complete.")
-
-        # Extract surface
-        surface = vtk.vtkExtractSurface()
-        surface.SetInputConnection(gauss.GetOutputPort())
-        surface.SetRadius(voxel_size)
-
-        # Windowed Sinc smoothing
-        smooth = vtk.vtkWindowedSincPolyDataFilter()
-        smooth.SetInputConnection(surface.GetOutputPort())
-        smooth.SetNumberOfIterations(smoothing_iterations)
-        smooth.SetPassBand(0.1)
-        smooth.NonManifoldSmoothingOn()
-        smooth.NormalizeCoordinatesOn()
-        try:
-            smooth.SetNumberOfThreads(multiprocessing.cpu_count())
-        except AttributeError:
-            pass
-        attach_progress(smooth, "Sinc Smooth")
-        smooth.Update()
-        print("Sinc smoothing complete.")
-
-        # Write STL
-        writer = vtk.vtkSTLWriter()
-        writer.SetFileName(outfilename)
-        writer.SetFileTypeToBinary()
-        writer.SetInputConnection(smooth.GetOutputPort())
-        writer.Write()
-        print(f"Written solid STL: {outfilename}")
-
-    except Exception:
-        logger.exception("make_solid_failed")
-        raise
