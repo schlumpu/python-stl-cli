@@ -9,7 +9,7 @@ def make_solid(
     infilename: str,
     outfilename: str,
     verbose: bool = False,
-    number_of_sample_points: int = 2**24,
+    number_of_sample_points: int = 2**22,
     density_depth: int = 10,
     keep_quantile: float = 0.0,
     smoothing_iterations: int = 20
